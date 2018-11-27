@@ -81,11 +81,20 @@ repoCount=$((repoCount/3))
 echo -e "\t${username}'s total repo count = ${repoCount}"
 echo -e "\t${username}'s ${YELLOW}private${NC} repo count = ${privaeRepoCount}"
 
+echo -e "creating backup directory"
+mkdir -p /media/${computeruser}/github_repo_backup 
+if [[ -d /media/${computeruser}/github_repo_backup ]]; then
+	echo -e "\t${GREEN}/media/${computeruser}/github_repo_backup directory create successfully${NC}"
+else
+	echo -e "\t${RED}/media/${computeruser}/github_repo_backup directory create failed${NC}"
+fi
+
 echo -e "backing up..."
 repo=$(echo "$repo" | sed 's/\"//g')
 repo=$(echo "$repo" | sed 's/\,//g')
 repo=$(echo "$repo" | sed 's/\://g')
 counter=0
+name=""
 echo "$repo" | while IFS= read -r line; do
 	IFS=' '
 	if [[ $(($counter % 3)) -eq 0 ]]; then
@@ -97,6 +106,9 @@ echo "$repo" | while IFS= read -r line; do
 			((count++))
 			continue
 		else
+			if [[ ${word} = ${username}/* ]]; then
+				name=$(echo ${word} | cut -d '/' -f2-)
+			fi
 			if [[ ${word} == "false" ]] || [[ ${word} == "true" ]]; then
 				echo -en "\tprivate: "
 				if [[ ${word} == "true" ]]; then
@@ -109,5 +121,8 @@ echo "$repo" | while IFS= read -r line; do
 			fi
 		fi
 	done
+	if [[ $(($counter % 3)) -eq 2 ]]; then
+		echo -e "\tname = ${name}"
+	fi
 	((counter++))
 done
