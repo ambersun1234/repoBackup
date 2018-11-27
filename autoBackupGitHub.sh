@@ -31,9 +31,7 @@ while [[ $# -gt 0 ]]
 		esac
 	done
 
-echo -e "username = ${username}"
-echo -e "token = ${token}"
-echo -e "mountLocation = ${mountLocation}\n"
+token=$(cat "$token")
 
 if [[ -z ${username} ]] || [[ -z ${token} ]] || [[ -z ${mountLocation} ]]; then
 	echo -e "${RED}argument can not be empty${NC}"
@@ -71,4 +69,13 @@ if [[ ! -z ${checkSSH} ]]; then
 	echo -e "\t${GREEN}ssh check done${NC}"
 else
 	echo -e "\t${RED}ssh check failed${NC}"
+	echo -e "\t${YELLOW}use https instead${NC}"
 fi
+
+echo -e "using github api querying user's repo"
+repo=$(curl -sH "Authorization: token "$token"" https://api.github.com/user/repos | grep -wE "full_name|private|ssh_url" 2>&1)
+privaeRepoCount=$(echo "$repo" | grep "\"private\": true" | wc -l)
+repoCount=$(echo "$repo" | wc -l)
+repoCount=$((repoCount/3))
+echo -e "\t${username}'s total repo count = ${repoCount}"
+echo -e "\t${username}'s ${YELLOW}private${NC} repo count = ${privaeRepoCount}"
