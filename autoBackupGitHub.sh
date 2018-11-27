@@ -4,18 +4,55 @@ YELLOW='\033[33m'
 NC='\033[0m'
 PURPLE='\033[35m'
 
-checkMount=$(cat /proc/mounts | grep /dev/sda2)
+computeruser=$(whoami)
+
+while [[ $# -gt 0 ]]
+	do
+		key="$1"
+		case $key in
+			-u|--user)
+			username="$2"
+			shift
+			shift
+			;;
+			-t|--token)
+			token="$2"
+			shift
+			shift
+			;;
+			-l|--location)
+			mountLocation="$2"
+			shift
+			shift
+			;;
+			*)
+			shift
+			;;
+		esac
+	done
+
+echo -e "username = ${username}"
+echo -e "token = ${token}"
+echo -e "mountLocation = ${mountLocation}\n"
+
+if [[ -z ${username} ]] || [[ -z ${token} ]] || [[ -z ${mountLocation} ]]; then
+	echo -e "${RED}argument can not be empty${NC}"
+	exit 0
+fi
+
+checkMount=$(cat /proc/mounts | grep "$mountLocation")
 echo -e "check hard disk status"
 if [[ ! -z ${checkMount} ]]; then
-	echo -e "\t${GREEN}/dev/sda2 mounted${NC}"
+	echo -e "\t${GREEN}${mountLocation} mounted${NC}"
 else
-	echo -e "\t${RED}/dev/sda2 unmount , mounting...${NC}"
-	sudo mount -t ntfs /dev/sda2 /media/ambersun
-	checkMount=$(cat /proc/mounts | grep /dev/sda2)
+	echo -e "\t${RED}${mountLocation} unmount , mounting...${NC}"
+	check=$(sudo mount -t ntfs ${mountLocation} /media/${computeruser} 2>&1)
+	checkMount=$(cat /proc/mounts | grep "$mountLocation")
 	if [[ ! -z ${checkMount} ]]; then
-		echo -e "\t${GREEN}/dev/sda2 mounted${NC}"
+		echo -e "\t${GREEN}${mountLocation} mounted${NC}"
 	else
 		echo -e "\t${RED}error occurred!!${NC}"
+		exit 0
 	fi
 fi
 
@@ -29,8 +66,8 @@ fi
 
 echo -e "check ssh"
 checkSSH=$(ssh -T git@github.com 2>&1)
-checkSSH=$(echo "$checkSSH" | grep authenticated 2>&1)
-if [[ ! -z checkSSH ]]; then
+checkSSH=$(echo "$checkSSH" | grep -we "authenticated" | grep -we ""$username"")
+if [[ ! -z ${checkSSH} ]]; then
 	echo -e "\t${GREEN}ssh check done${NC}"
 else
 	echo -e "\t${RED}ssh check failed${NC}"
