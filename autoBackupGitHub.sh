@@ -67,15 +67,47 @@ checkSSH=$(ssh -T git@github.com 2>&1)
 checkSSH=$(echo "$checkSSH" | grep -we "authenticated" | grep -we ""$username"")
 if [[ ! -z ${checkSSH} ]]; then
 	echo -e "\t${GREEN}ssh check done${NC}"
+	repo=$(curl -sH "Authorization: token "$token"" https://api.github.com/user/repos | grep -wE "full_name|private|ssh_url" 2>&1)
 else
 	echo -e "\t${RED}ssh check failed${NC}"
 	echo -e "\t${YELLOW}use https instead${NC}"
+	repo=$(curl -sH "Authorization: token "$token"" https://api.github.com/user/repos | grep -wE "full_name|private|clone_url" 2>&1)
 fi
 
 echo -e "using github api querying user's repo"
-repo=$(curl -sH "Authorization: token "$token"" https://api.github.com/user/repos | grep -wE "full_name|private|ssh_url" 2>&1)
 privaeRepoCount=$(echo "$repo" | grep "\"private\": true" | wc -l)
 repoCount=$(echo "$repo" | wc -l)
 repoCount=$((repoCount/3))
 echo -e "\t${username}'s total repo count = ${repoCount}"
 echo -e "\t${username}'s ${YELLOW}private${NC} repo count = ${privaeRepoCount}"
+
+echo -e "backing up..."
+repo=$(echo "$repo" | sed 's/\"//g')
+repo=$(echo "$repo" | sed 's/\,//g')
+repo=$(echo "$repo" | sed 's/\://g')
+counter=0
+echo "$repo" | while IFS= read -r line; do
+	IFS=' '
+	if [[ $(($counter % 3)) -eq 0 ]]; then
+		echo -e "\t---"
+	fi
+	count=0
+	for word in $line; do
+		if [[ count -eq 0 ]]; then
+			((count++))
+			continue
+		else
+			if [[ ${word} == "false" ]] || [[ ${word} == "true" ]]; then
+				echo -en "\tprivate: "
+				if [[ ${word} == "true" ]]; then
+					echo -e "${YELLOW}${word}${NC}"
+				else
+					echo -e "${word}"
+				fi
+			else
+				echo -e "\t${word}"
+			fi
+		fi
+	done
+	((counter++))
+done
