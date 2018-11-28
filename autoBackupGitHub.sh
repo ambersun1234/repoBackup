@@ -104,16 +104,13 @@ else
 fi
 
 echo -e "check ssh"
-cloneOption=""
 checkSSH=$(ssh -T git@github.com 2>&1)
 checkSSH=$(echo "$checkSSH" | grep -we "authenticated" | grep -we ""$username"")
 if [[ ! -z ${checkSSH} ]]; then
 	echo -e "\t${GREEN}ssh check done${NC}"
-	cloneOption="ssh"
 else
 	echo -e "\t${RED}ssh check failed${NC}"
 	echo -e "\t${YELLOW}use https instead${NC}"
-	cloneOption="https"
 fi
 
 echo -e "check token"
@@ -126,7 +123,7 @@ if [[ ${token} == "-1" ]]; then
 		exit 0
 	else
 		echo -e "\t${GREEN}username checked${NC}"
-		repo=$(echo "$repo" | grep -wE "\"private\"|\"clone_url\"")
+		repo=$(echo "$repo" | grep -wE "\"full_name\"|\"private\"|\"clone_url\"")
 	fi
 else
 	echo -e "\t${GREEN}token specified${NC}"
@@ -137,7 +134,7 @@ else
 		exit 0
 	else
 		echo -e "\t${GREEN}token checked${NC}"
-		repo=$(echo "$repo" | grep -wE "\"private\"|\"ssh_url\"")
+		repo=$(echo "$repo" | grep -wE "\"full_name\"|\"private\"|\"ssh_url\"")
 	fi
 fi
 
@@ -150,8 +147,11 @@ echo -e "\t${username}'s ${YELLOW}private${NC} repo count = ${privaeRepoCount}"
 
 echo -e "creating backup directory"
 mkdir -p /media/${computeruser}/github_repo_backup 
+mkdir -p /media/${computeruser}/temp_dir
 if [[ -d /media/${computeruser}/github_repo_backup ]]; then
 	echo -e "\t${GREEN}/media/${computeruser}/github_repo_backup directory create successfully${NC}"
+	temp=$(rm -rf /media/${computeruser}/github_repo_backup/* rm -rf /media/${computeruser}/github_repo_backup/.* 2>&1)
+
 else
 	echo -e "\t${RED}/media/${computeruser}/github_repo_backup directory create failed${NC}"
 fi
@@ -168,12 +168,14 @@ echo "$repo" | while IFS= read -r line; do
 	count=0
 	line=$(echo "$line" | sed 's/\://')
 	for word in $line; do
+		# the first word of each line does not need to output , just need to save it in to variable "name"
 		if [[ count -eq 0 ]]; then
 			((count++))
 			continue
 		else
 			if [[ ${word} = ${username}/* ]]; then
 				name=$(echo ${word} | cut -d '/' -f2-)
+				continue
 			fi
 			if [[ ${word} == "false" ]] || [[ ${word} == "true" ]]; then
 				echo -en "\tprivate: "
@@ -183,11 +185,26 @@ echo "$repo" | while IFS= read -r line; do
 					printf "${word}"
 				fi
 			else
+				# output url
 				echo -e "\t${word}"
+				temp=$(git clone ${word} /media/${computeruser}/temp_dir/ 2>&1)
+				mkdir -p /media/${computeruser}/github_repo_backup/${name}
+				shopt -s dotglob
+				mv /media/${computeruser}/temp_dir/* /media/${computeruser}/github_repo_backup/${name}/
+				shopt -u dotglob
+				temp=$(rm -rf /media/${computeruser}/temp_dir/* /media/${computeruser}/temp_dir/.* 2>&1)
+
+				if [[ -d /media/"${computeruser}"/github_repo_backup/"${name}" ]]; then
+					echo -e "\t${GREEN}${name} clone done${NC}"
+				else
+					echo -e "\t${RED}${name} clone failed${NC}"
+				fi
 			fi
 		fi
 	done
 done
+rm -rf /media/${computeruser}/temp_dir
+echo -e "done"
 
 # set back case sensetive
 shopt -u nocasematch
