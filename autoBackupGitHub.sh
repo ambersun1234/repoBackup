@@ -3,8 +3,40 @@ GREEN='\033[32m'
 YELLOW='\033[33m'
 NC='\033[0m'
 PURPLE='\033[35m'
+BOLD=$(tput bold)
+NORMAL=$(tput sgr0)
+UNDERLINE='\033[4m'
 
 computeruser=$(whoami)
+
+_help() {
+	cols=$(tput cols)
+	title="autoBackupGithub help manual"
+	printf "${BOLD}%*s${NORMAL}" $(((${#title}+$cols)/2)) "$title"
+
+	echo -e "\n${BOLD}NAME${NORMAL}"
+	echo -e "\tautoBackupGithub - backup all your public and private repository on github"
+
+	echo -e "\n${BOLD}SYNOPSIS${NORMAL}"
+	echo -e "\t./autoBackup -u [${UNDERLINE}username${NC}]... -l [${UNDERLINE}location${NC}]..."
+
+	echo -e "\n${BOLD}DESCRIPTION${NORMAL}"
+	echo -e "\tBackup all your github repository via github api."
+	echo -e "\tIf you wish to backup your private repository ,"
+	echo -e "\tyou need to go to github to generate Personal Access Token( PAT )."
+
+	echo -e "\n\t${BOLD}-u, --user${NORMAL}"
+	echo -e "\t\tgithub account's user name"
+
+	echo -e "\n\t${BOLD}-t, --token( optional )${NORMAL}"
+	echo -e "\t\tPersonal Access Token( PAT ) file location"
+
+	echo -e "\n\t${BOLD}-l, --location${NORMAL}"
+	echo -e "\t\tbackup storage device( e.g. /dev/sda2 )"
+
+	echo -e "\n\t${BOLD}--help${NORMAL}"
+	echo -e "\t\tbring up help manual"
+}
 
 while [[ $# -gt 0 ]]
 	do
@@ -25,16 +57,25 @@ while [[ $# -gt 0 ]]
 			shift
 			shift
 			;;
+			--help)
+			_help
+			exit 0
+			shift
+			;;
 			*)
 			shift
 			;;
 		esac
 	done
 
-token=$(cat "$token")
+if [[ -z ${token} ]]; then
+	token="\0"
+else
+	token=$(cat "$token" 2>&1)
+fi
 
 if [[ -z ${username} ]] || [[ -z ${token} ]] || [[ -z ${mountLocation} ]]; then
-	echo -e "${RED}argument can not be empty${NC}"
+	echo -e "${RED}argument can not be empty${NC} , use ./autoGithubBackup --help to bring up help manual"
 	exit 0
 fi
 
