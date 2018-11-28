@@ -69,7 +69,7 @@ while [[ $# -gt 0 ]]
 	done
 
 if [[ -z ${token} ]]; then
-	token="\0"
+	token="-1"
 else
 	token=$(cat "$token" 2>&1)
 fi
@@ -104,15 +104,41 @@ else
 fi
 
 echo -e "check ssh"
+cloneOption=""
 checkSSH=$(ssh -T git@github.com 2>&1)
 checkSSH=$(echo "$checkSSH" | grep -we "authenticated" | grep -we ""$username"")
 if [[ ! -z ${checkSSH} ]]; then
 	echo -e "\t${GREEN}ssh check done${NC}"
-	repo=$(curl -sH "Authorization: token "$token"" https://api.github.com/user/repos | grep -wE "full_name|private|ssh_url" 2>&1)
+	cloneOption="ssh"
 else
 	echo -e "\t${RED}ssh check failed${NC}"
 	echo -e "\t${YELLOW}use https instead${NC}"
-	repo=$(curl -sH "Authorization: token "$token"" https://api.github.com/user/repos | grep -wE "full_name|private|clone_url" 2>&1)
+	cloneOption="https"
+fi
+
+echo -e "check token"
+if [[ ${token} == "-1" ]]; then
+	echo -e "\t${YELLOW}token not specified , using username ${username} to get repository${NC}"
+	repo=$(curl -s https://api.github.com/users/"$username"/repos 2>&1)
+	temp=$(echo "$repo" | grep "\"message\"\: \"Not Found\"")
+	if [[ ! -z ${temp} ]]; then
+		echo -e "\t${RED}username not found , please check again${NC}"
+		exit 0
+	else
+		echo -e "\t${GREEN}username checked${NC}"
+		repo=$(echo "$repo" | grep -wE "\"private\"|\"clone_url\"")
+	fi
+else
+	echo -e "\t${GREEN}token specified${NC}"
+	repo=$(curl -sH "Authorization: token "$token"" https://api.github.com/user/repos 2>&1)
+	temp=$(echo "$repo" | grep "\"message\"\: \"Bad credentials\"")
+	if [[ ! -z ${temp} ]]; then
+		echo -e "\t${RED}token not found , please check again${NC}"
+		exit 0
+	else
+		echo -e "\t${GREEN}token checked${NC}"
+		repo=$(echo "$repo" | grep -wE "\"private\"|\"ssh_url\"")
+	fi
 fi
 
 echo -e "using github api querying user's repo"
@@ -131,17 +157,16 @@ else
 fi
 
 echo -e "backing up..."
+# setting case-insensetive
+shopt -s nocasematch
+
 repo=$(echo "$repo" | sed 's/\"//g')
 repo=$(echo "$repo" | sed 's/\,//g')
-repo=$(echo "$repo" | sed 's/\://g')
-counter=0
 name=""
 echo "$repo" | while IFS= read -r line; do
 	IFS=' '
-	if [[ $(($counter % 3)) -eq 0 ]]; then
-		echo -e "\t---"
-	fi
 	count=0
+	line=$(echo "$line" | sed 's/\://')
 	for word in $line; do
 		if [[ count -eq 0 ]]; then
 			((count++))
@@ -153,17 +178,16 @@ echo "$repo" | while IFS= read -r line; do
 			if [[ ${word} == "false" ]] || [[ ${word} == "true" ]]; then
 				echo -en "\tprivate: "
 				if [[ ${word} == "true" ]]; then
-					echo -e "${YELLOW}${word}${NC}"
+					printf "${YELLOW}${word}${NC}"
 				else
-					echo -e "${word}"
+					printf "${word}"
 				fi
 			else
 				echo -e "\t${word}"
 			fi
 		fi
 	done
-	if [[ $(($counter % 3)) -eq 2 ]]; then
-		echo -e "\tname = ${name}"
-	fi
-	((counter++))
 done
+
+# set back case sensetive
+shopt -u nocasematch
