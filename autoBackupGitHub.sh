@@ -79,6 +79,14 @@ if [[ -z ${username} ]] || [[ -z ${token} ]] || [[ -z ${mountLocation} ]]; then
 	exit 0
 fi
 
+checkCurl=$(apt-cache policy curl | grep Installed | cut -c14-)
+echo -e "check curl"
+if [[ ! -z ${checkCurl} ]]; then
+	echo -e "\t${GREEN}curl checked${NC}"
+else
+	echo -e "\t${RED}curl not installed , please install it and re-run the program${NC}"
+fi
+
 checkMount=$(cat /proc/mounts | grep "$mountLocation")
 echo -e "check hard disk status"
 if [[ ! -z ${checkMount} ]]; then
