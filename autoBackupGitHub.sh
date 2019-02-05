@@ -79,6 +79,9 @@ if [[ -z ${username} ]] || [[ -z ${token} ]] || [[ -z ${mountLocation} ]]; then
 	exit 0
 fi
 
+time=$(date +"%Y/%m/%d-%H:%M:%S")
+echo -e "\nexecute start time: ${time}\n"
+
 checkCurl=$(apt-cache policy curl | grep Installed | cut -c14-)
 echo -e "check curl"
 if [[ ! -z ${checkCurl} ]]; then
@@ -107,6 +110,7 @@ checkInternet=$(ping -c 1 8.8.8.8 | grep 64\ bytes\ from)
 echo -e "check internet connection"
 if [ "$checkInternet" == "" ]; then
 	echo -e "\t${RED}connection error${NC}"
+	exit 1
 else
 	echo -e "\t${GREEN}connection okay${NC}"
 fi
