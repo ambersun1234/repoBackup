@@ -20,5 +20,14 @@ cd repoBackup
 chmod +x autoBackupGithub.sh
 ./autoBackupGithub.sh -u USERNAME -l /PATH/TO/STORAGE
 ```
+### Auto Running
++ setup crontab to auto run backup script
+```=1
+crontab -e
+0 0 * * 1 bash ./repoBackup/autoBackupGithub.sh -u YOUR_GITHUB_USER_NAME -l /PATH/TO/STORAGE -t ./YOUR_PERSONAL_ACCESS_TOKEN_FILE > /home/USER/.cron.log 2>&1
+```
++ save and exit , no need to restart crontab
++ this will run for every monday at 00:00
++ the log file will be written to `/home/USER/.cron.log` , check it out using `cat ~/.cron.log`
 ### License
 This project is licensed under GNU General Public License v3.0 License - see the [LICENSE](https://github.com/ambersun1234/repoBackup/blob/master/LICENSE) file for detail
