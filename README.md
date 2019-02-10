@@ -2,7 +2,7 @@
 backup script for all your public & private repository on github
 ### Clone repo
 ```=1
-git clone https://github.com/ambersun1234/repoBackup.git .
+git clone https://github.com/ambersun1234/repoBackup.git
 ```
 ### Flags
 + `-u, --user`: github account's user name
@@ -17,14 +17,16 @@ git clone https://github.com/ambersun1234/repoBackup.git .
 ### Running
 ```=1
 cd repoBackup
-chmod +x autoBackupGithub.sh
-./autoBackupGithub.sh -u USERNAME -l /PATH/TO/STORAGE
+chmod +x autoBackupGitHub.sh
+./autoBackupGitHub.sh -u YOUR_GITHUB_USER_NAME -l /PATH/TO/STORAGE -t ./YOUR_PERSONAL_ACCESS_TOKEN_FILE
 ```
 ### Auto Running
++ configure parameter
+    + open `run.sh` file , in the final line , change **YOUR_GITHUB_USER_NAME** and **/PATH/TO/STORAGE** and **YOUR_PERSONAL_ACCESS_TOKEN_FILE**( if needed )
 + setup crontab to auto run backup script
 ```=1
 crontab -e
-0 0 * * 1 bash ./repoBackup/autoBackupGithub.sh -u YOUR_GITHUB_USER_NAME -l /PATH/TO/STORAGE -t ./YOUR_PERSONAL_ACCESS_TOKEN_FILE > /home/USER/.cron.log 2>&1
+0 0 * * 1 bash ./repoBackup/run.sh > /home/USER/.cron.log 2>&1
 ```
 + save and exit , no need to restart crontab
 + this will run for every monday at 00:00
