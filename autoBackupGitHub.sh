@@ -1,3 +1,5 @@
+#!bin/bash
+
 RED='\033[31m'
 GREEN='\033[32m'
 YELLOW='\033[33m'
@@ -160,12 +162,20 @@ echo -e "\t${username}'s ${YELLOW}private${NC} repo count = ${privaeRepoCount}"
 echo -e "creating backup directory"
 mkdir -p /media/${computeruser}/github_repo_backup 
 mkdir -p /media/${computeruser}/temp_dir
+
 if [[ -d /media/${computeruser}/github_repo_backup ]]; then
 	echo -e "\t${GREEN}/media/${computeruser}/github_repo_backup directory create successfully${NC}"
-	temp=$(rm -rf /media/${computeruser}/github_repo_backup/* rm -rf /media/${computeruser}/github_repo_backup/.* 2>&1)
-
+	temp=$(rm -rf /media/${computeruser}/github_repo_backup/* && rm -rf /media/${computeruser}/github_repo_backup/.* 2>&1)
 else
 	echo -e "\t${RED}/media/${computeruser}/github_repo_backup directory create failed${NC}"
+	exit 0
+fi
+if [[ -d /media/${computeruser}/temp_dir ]]; then
+	echo -e "\t${GREEN}/media/${computeruser}/temp_dir directory create successfully${NC}"
+	temp=$(rm -rf /media/${computeruser}/github_repo_backup/* && rm -rf /media/${computeruser}/github_repo_backup/.* 2>&1)
+else
+	echo -e "\t${RED}/media/${computeruser}/temp_dir directory create failed${NC}"
+	exit 0
 fi
 
 echo -e "backing up..."
@@ -178,15 +188,23 @@ name=""
 echo "$repo" | while IFS= read -r line; do
 	IFS=' '
 	count=0
+	flag=0
 	line=$(echo "$line" | sed 's/\://')
+
 	for word in $line; do
+		# check if full name
+		if [[ ${word} = "full_name" ]]; then
+			flag=1
+		fi
 		# the first word of each line does not need to output , just need to save it in to variable "name"
 		if [[ count -eq 0 ]]; then
 			((count++))
 			continue
 		else
-			if [[ ${word} = ${username}/* ]]; then
+			if [[ ${word} = ${username}/* ]] || [[ flag -eq 1 ]]; then
+				# get repo name
 				name=$(echo ${word} | cut -d '/' -f2-)
+				flag=0
 				continue
 			fi
 			if [[ ${word} == "false" ]] || [[ ${word} == "true" ]]; then
@@ -199,7 +217,8 @@ echo "$repo" | while IFS= read -r line; do
 			else
 				# output url
 				echo -e "\t${word}"
-				temp=$(git clone ${word} /media/${computeruser}/temp_dir/ 2>&1)
+				# temp=$(git clone ${word} /media/${computeruser}/temp_dir/ 2>&1)
+				temp=$(git clone ${word} /media/${computeruser}/temp_dir/)
 				mkdir -p /media/${computeruser}/github_repo_backup/${name}
 				shopt -s dotglob
 				mv /media/${computeruser}/temp_dir/* /media/${computeruser}/github_repo_backup/${name}/
