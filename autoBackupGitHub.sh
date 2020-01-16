@@ -160,7 +160,7 @@ echo -e "\t${username}'s total repo count = ${repoCount}"
 echo -e "\t${username}'s ${YELLOW}private${NC} repo count = ${privaeRepoCount}"
 
 echo -e "creating backup directory"
-mkdir -p /media/${computeruser}/github_repo_backup 
+mkdir -p /media/${computeruser}/github_repo_backup
 mkdir -p /media/${computeruser}/temp_dir
 
 if [[ -d /media/${computeruser}/github_repo_backup ]]; then
@@ -219,13 +219,14 @@ echo "$repo" | while IFS= read -r line; do
 				echo -e "\t${word}"
 				# temp=$(git clone ${word} /media/${computeruser}/temp_dir/ 2>&1)
 				temp=$(git clone ${word} /media/${computeruser}/temp_dir/)
-				mkdir -p /media/${computeruser}/github_repo_backup/${name}
-				shopt -s dotglob
-				mv /media/${computeruser}/temp_dir/* /media/${computeruser}/github_repo_backup/${name}/
-				shopt -u dotglob
-				temp=$(rm -rf /media/${computeruser}/temp_dir/* /media/${computeruser}/temp_dir/.* 2>&1)
 
 				if [[ -d /media/"${computeruser}"/github_repo_backup/"${name}" ]]; then
+					mkdir -p /media/${computeruser}/github_repo_backup/${name}
+					shopt -s dotglob
+					mv /media/${computeruser}/temp_dir/* /media/${computeruser}/github_repo_backup/${name}/
+					shopt -u dotglob
+					temp=$(rm -rf /media/${computeruser}/temp_dir/* /media/${computeruser}/temp_dir/.* 2>&1)
+					
 					echo -e "\t${GREEN}${name} clone done${NC}"
 				else
 					echo -e "\t${RED}${name} clone failed${NC}"
