@@ -7,7 +7,7 @@ git clone https://github.com/ambersun1234/repoBackup.git
 ### Flags
 + `-u, --user`: github account's user name
 + `-t, --token`: Personal Access Token( PAT ) file location
-+ `-l, --location`: backup storage device( e.g. /dev/sda2 )
++ `-l, --location`: backup storage device( e.g. /mnt/mystorage )
 + `--help`: bring up help manual
 ### Notes
 + make sure that `curl` is installed in your machine

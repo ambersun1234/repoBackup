@@ -55,7 +55,7 @@ while [[ $# -gt 0 ]]
 			shift
 			;;
 			-l|--location)
-			mountLocation="$2"
+			directoryLocation="$2"
 			shift
 			shift
 			;;
@@ -76,10 +76,12 @@ else
 	token=$(cat "$token" 2>&1)
 fi
 
-if [[ -z ${username} ]] || [[ -z ${token} ]] || [[ -z ${mountLocation} ]]; then
+if [[ -z ${username} ]] || [[ -z ${token} ]] || [[ -z ${directoryLocation} ]]; then
 	echo -e "${RED}argument can not be empty${NC} , use ./autoGithubBackup --help to bring up help manual"
 	exit 0
 fi
+
+directoryLocation=${directoryLocation%/}
 
 time=$(date +"%Y/%m/%d-%H:%M:%S")
 echo -e "\nexecute start time: ${time}\n"
@@ -92,21 +94,21 @@ else
 	echo -e "\t${RED}curl not installed , please install it and re-run the program${NC}"
 fi
 
-checkMount=$(cat /proc/mounts | grep "$mountLocation")
-echo -e "check hard disk status"
-if [[ ! -z ${checkMount} ]]; then
-	echo -e "\t${GREEN}${mountLocation} mounted${NC}"
-else
-	echo -e "\t${RED}${mountLocation} unmount , mounting...${NC}"
-	check=$(sudo mount -t ntfs ${mountLocation} /media/${computeruser} 2>&1)
-	checkMount=$(cat /proc/mounts | grep "$mountLocation")
-	if [[ ! -z ${checkMount} ]]; then
-		echo -e "\t${GREEN}${mountLocation} mounted${NC}"
-	else
-		echo -e "\t${RED}error occurred!!${NC}"
-		exit 0
-	fi
-fi
+# checkMount=$(cat /proc/mounts | grep "$directoryLocation")
+# echo -e "check hard disk status"
+# if [[ ! -z ${checkMount} ]]; then
+# 	echo -e "\t${GREEN}${directoryLocation} mounted${NC}"
+# else
+# 	echo -e "\t${RED}${directoryLocation} unmount , mounting...${NC}"
+# 	check=$(sudo mount -t ntfs ${directoryLocation} /media/${computeruser} 2>&1)
+# 	checkMount=$(cat /proc/mounts | grep "$directoryLocation")
+# 	if [[ ! -z ${checkMount} ]]; then
+# 		echo -e "\t${GREEN}${directoryLocation} mounted${NC}"
+# 	else
+# 		echo -e "\t${RED}error occurred!!${NC}"
+# 		exit 0
+# 	fi
+# fi
 
 checkInternet=$(ping -c 1 8.8.8.8 | grep 64\ bytes\ from)
 echo -e "check internet connection"
@@ -160,21 +162,25 @@ echo -e "\t${username}'s total repo count = ${repoCount}"
 echo -e "\t${username}'s ${YELLOW}private${NC} repo count = ${privaeRepoCount}"
 
 echo -e "creating backup directory"
-mkdir -p /media/${computeruser}/github_repo_backup
-mkdir -p /media/${computeruser}/temp_dir
+backupDir="${directoryLocation}/github_repo_backup"
+tempDir="${directoryLocation}/temp_dir"
+readonly backupDir
+readonly tempDir
+mkdir -p ${backupDir}
+mkdir -p ${tempDir}
 
-if [[ -d /media/${computeruser}/github_repo_backup ]]; then
-	echo -e "\t${GREEN}/media/${computeruser}/github_repo_backup directory create successfully${NC}"
-	temp=$(rm -rf /media/${computeruser}/github_repo_backup/* && rm -rf /media/${computeruser}/github_repo_backup/.* 2>&1)
+if [[ -d ${backupDir} ]]; then
+	echo -e "\t${GREEN}${backupDir} directory create successfully${NC}"
+	temp=$(rm -rf ${backupDir}/* && rm -rf ${backupDir}/.* 2>&1)
 else
-	echo -e "\t${RED}/media/${computeruser}/github_repo_backup directory create failed${NC}"
+	echo -e "\t${RED}${backupDir} directory create failed${NC}"
 	exit 0
 fi
-if [[ -d /media/${computeruser}/temp_dir ]]; then
-	echo -e "\t${GREEN}/media/${computeruser}/temp_dir directory create successfully${NC}"
-	temp=$(rm -rf /media/${computeruser}/github_repo_backup/* && rm -rf /media/${computeruser}/github_repo_backup/.* 2>&1)
+if [[ -d ${tempDir} ]]; then
+	echo -e "\t${GREEN}${tempDir} directory create successfully${NC}"
+	temp=$(rm -rf ${backupDir}/* && rm -rf ${backupDir}/.* 2>&1)
 else
-	echo -e "\t${RED}/media/${computeruser}/temp_dir directory create failed${NC}"
+	echo -e "\t${RED}${tempDir} directory create failed${NC}"
 	exit 0
 fi
 
@@ -217,15 +223,27 @@ echo "$repo" | while IFS= read -r line; do
 			else
 				# output url
 				echo -e "\t${word}"
-				# temp=$(git clone ${word} /media/${computeruser}/temp_dir/ 2>&1)
-				temp=$(git clone ${word} /media/${computeruser}/temp_dir/)
+				
+				# get full repository path
+				if [ "$token" != "-1" ]; then
+					repoPathT="${username}:${token}@"
+				else
+					repoPathT=""
+				fi
+				repoPath1="https://"
+				repoPath2="github.com/${username}/${name}.git"
+				fullRepoPath="${repoPath1}${repoPathT}${repoPath2}"
 
-				if [[ -d /media/"${computeruser}"/github_repo_backup/"${name}" ]]; then
-					mkdir -p /media/${computeruser}/github_repo_backup/${name}
+				mkdir -p ${tempDir}/${name}
+				# clone repo
+				temp=$(git clone ${fullRepoPath} ${tempDir}/${name})
+
+				if [[ -d "${tempDir}/${name}" ]]; then
+					mkdir -p ${backupDir}/${name}
 					shopt -s dotglob
-					mv /media/${computeruser}/temp_dir/* /media/${computeruser}/github_repo_backup/${name}/
+					mv ${tempDir}/* ${backupDir}/.
 					shopt -u dotglob
-					temp=$(rm -rf /media/${computeruser}/temp_dir/* /media/${computeruser}/temp_dir/.* 2>&1)
+					temp=$(rm -rf ${tempDir}/* ${tempDir}/.* 2>&1)
 					
 					echo -e "\t${GREEN}${name} clone done${NC}"
 				else
@@ -235,7 +253,7 @@ echo "$repo" | while IFS= read -r line; do
 		fi
 	done
 done
-rm -rf /media/${computeruser}/temp_dir
+rm -rf ${tempDir}
 echo -e "done"
 
 # set back case sensetive
