@@ -12,7 +12,7 @@ git clone https://github.com/ambersun1234/repoBackup.git
 ### Notes
 + make sure that `curl` is installed in your machine
     + install curl by `sudo apt install curl -y`
-+ for backup `private` repository , please generate your `Personal Access Token(PAT)` first , store the PAT into your local machine , and add `-t` flag in execution. <br>[creating a personal access token for the command line](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
++ for backup `private` repository , please generate your `Personal Access Token(PAT)` first , store the PAT into your local machine , and add `-t` flag in execution. <br>[creating a personal access token for the command line](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 ### Running
 ```=1
 cd repoBackup
